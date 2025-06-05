@@ -1,11 +1,14 @@
 
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { GameSettings, CustomSoundFile } from '../types';
 import { 
-    playSound, CORRECT_SOUNDS, SKIP_SOUNDS, SINGLE_SOUND_EFFECTS,
+    playSound, SINGLE_SOUND_EFFECTS,
     COMBO_ACTIVATION_THRESHOLD, COMBO_POINT_BONUS, 
     COMBO_TIME_BONUS_THRESHOLD, COMBO_TIME_BONUS_SECONDS, MAX_COMBO_TIME_BONUS_APPLICATIONS,
     POWERUP_TIME_FREEZE_SECONDS
+    // CORRECT_SOUNDS and SKIP_SOUNDS are imported by App.tsx and passed as props if defaults are needed
+    // No direct import needed here if we rely on props customCorrectSounds/customSkipSounds
 } from '../constants';
 
 type WordDisplayStatus = 'default' | 'correct' | 'skipped';
@@ -231,108 +234,97 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
     const soundUrl = customCountdownGoSound?.data || SINGLE_SOUND_EFFECTS.COUNTDOWN_GO;
     if (soundUrl) {
-      // If audio element exists and its src is already correct, ensure it's loaded if needed, but don't re-create.
       if (countdownAudioRef.current && countdownAudioRef.current.src === soundUrl) {
         if (countdownAudioRef.current.paused && countdownAudioRef.current.readyState < HTMLMediaElement.HAVE_ENOUGH_DATA) {
-            countdownAudioRef.current.load(); // Ensure it's loaded if it was somehow reset or not fully loaded
+            countdownAudioRef.current.load(); 
         }
       } else {
-        // Audio element doesn't exist, or src is different (e.g., custom sound changed or first load)
         if (countdownAudioRef.current) {
-          countdownAudioRef.current.pause(); // Pause old audio if any
+          countdownAudioRef.current.pause(); 
         }
         countdownAudioRef.current = new Audio(soundUrl);
         countdownAudioRef.current.preload = 'auto';
-        countdownAudioRef.current.load(); // Explicitly load new/changed source
+        countdownAudioRef.current.load(); 
       }
     } else {
-      // No soundUrl provided, ensure any existing audio is cleared
       if (countdownAudioRef.current) {
         countdownAudioRef.current.pause();
-        countdownAudioRef.current.src = ''; // Clear src
+        countdownAudioRef.current.src = ''; 
       }
     }
 
     return () => {
-      if (gameTimerIdRef.current) clearInterval(gameTimerIdRef.current);
-      if (countdownTimerIdRef.current) clearTimeout(countdownTimerIdRef.current);
-      if (cardAnimationTimerIdRef.current) clearTimeout(cardAnimationTimerIdRef.current);
-      if (wordProcessingTimerIdRef.current) clearTimeout(wordProcessingTimerIdRef.current);
-      if (catAnimationTimerRef.current) clearTimeout(catAnimationTimerRef.current);
-      if (starEffectTimerRef.current) clearTimeout(starEffectTimerRef.current);
-      if (gameMessageTimerRef.current) clearTimeout(gameMessageTimerRef.current);
-      // Do not clear countdownAudioRef.current.src here to allow it to be reused if soundUrl is the same next time
+      if (gameTimerIdRef.current) window.clearInterval(gameTimerIdRef.current);
+      if (countdownTimerIdRef.current) window.clearTimeout(countdownTimerIdRef.current);
+      if (cardAnimationTimerIdRef.current) window.clearTimeout(cardAnimationTimerIdRef.current);
+      if (wordProcessingTimerIdRef.current) window.clearTimeout(wordProcessingTimerIdRef.current);
+      if (catAnimationTimerRef.current) window.clearTimeout(catAnimationTimerRef.current);
+      if (starEffectTimerRef.current) window.clearTimeout(starEffectTimerRef.current);
+      if (gameMessageTimerRef.current) window.clearTimeout(gameMessageTimerRef.current);
     };
   }, [settings.words, settings.totalTimeLimit, customCountdownGoSound]); 
 
   // Countdown Logic
   useEffect(() => {
-    if (countdownTimerIdRef.current) clearTimeout(countdownTimerIdRef.current);
+    if (countdownTimerIdRef.current) window.clearTimeout(countdownTimerIdRef.current);
     if (countdownStepIndex >= COUNTDOWN_STEPS.length) { 
       setShowGameUI(true);
       return; 
     }
     
-    if (countdownStepIndex === 0) { // Play full sound sequence at "3"
+    if (countdownStepIndex === 0) { 
       const currentSoundUrl = customCountdownGoSound?.data || SINGLE_SOUND_EFFECTS.COUNTDOWN_GO;
-      // Check if the audio ref is properly initialized and its src matches the expected sound
       if (countdownAudioRef.current && countdownAudioRef.current.src && countdownAudioRef.current.src === currentSoundUrl) {
         countdownAudioRef.current.currentTime = 0; 
         const playPromise = countdownAudioRef.current.play();
         if (playPromise !== undefined) {
             playPromise.catch(error => {
-                // Benign errors like AbortError (sound interrupted) or NotAllowedError (browser policy)
-                // For NotAllowedError, it implies an issue with autoplay policies not met by user interaction.
-                // The global BackgroundMusicPlayer interaction listener should generally cover this.
                 if (error.name !== 'AbortError' && error.name !== 'NotAllowedError') {
                   // console.warn("Countdown audio play error:", error.name, error.message);
                 }
             });
         }
       } else if (currentSoundUrl) { 
-        // Fallback if countdownAudioRef wasn't ready (e.g., src mismatch or not created)
-        // This might happen if customCountdownGoSound changed and the setup effect didn't run yet, or an error.
-        // console.warn("Countdown audio ref not ready or src mismatch, using playSound for countdown.");
         playSound(currentSoundUrl);
       }
     }
 
-    countdownTimerIdRef.current = setTimeout(() => {
+    countdownTimerIdRef.current = window.setTimeout(() => {
       setCountdownStepIndex(prev => prev + 1);
     }, 1000); 
 
     return () => {
-      if (countdownTimerIdRef.current) clearTimeout(countdownTimerIdRef.current);
+      if (countdownTimerIdRef.current) window.clearTimeout(countdownTimerIdRef.current);
     };
   }, [countdownStepIndex, customCountdownGoSound]); 
 
   // Game Timer Logic
   useEffect(() => {
-    if (!showGameUI || isProcessingWord || isTimerFrozen) return; // Pause timer if frozen
+    if (!showGameUI || isProcessingWord || isTimerFrozen) return; 
     if (gameTimeLeft <= 0) {
-      if (gameTimerIdRef.current) clearInterval(gameTimerIdRef.current);
+      if (gameTimerIdRef.current) window.clearInterval(gameTimerIdRef.current);
       onGameEndRef.current(currentScore, 0);
       return;
     }
-    if (gameTimerIdRef.current) clearInterval(gameTimerIdRef.current); 
-    gameTimerIdRef.current = setInterval(() => {
+    if (gameTimerIdRef.current) window.clearInterval(gameTimerIdRef.current); 
+    gameTimerIdRef.current = window.setInterval(() => {
       setGameTimeLeft(prevTime => Math.max(0, prevTime - 1)); 
     }, 1000);
     return () => {
-      if (gameTimerIdRef.current) clearInterval(gameTimerIdRef.current);
+      if (gameTimerIdRef.current) window.clearInterval(gameTimerIdRef.current);
     };
-  }, [gameTimeLeft, currentScore, showGameUI, isProcessingWord, isTimerFrozen]); // Added isTimerFrozen
+  }, [gameTimeLeft, currentScore, showGameUI, isProcessingWord, isTimerFrozen]);
 
   const triggerGameMessage = (text: string, type: GameMessage['type'], duration: number = 1500) => {
     setGameMessage({ text, key: Date.now(), type });
-    if (gameMessageTimerRef.current) clearTimeout(gameMessageTimerRef.current);
-    gameMessageTimerRef.current = setTimeout(() => setGameMessage(null), duration);
+    if (gameMessageTimerRef.current) window.clearTimeout(gameMessageTimerRef.current);
+    gameMessageTimerRef.current = window.setTimeout(() => setGameMessage(null), duration);
   };
 
   const triggerCardAnimation = (type: 'correct' | 'skip') => {
-    if (cardAnimationTimerIdRef.current) clearTimeout(cardAnimationTimerIdRef.current);
+    if (cardAnimationTimerIdRef.current) window.clearTimeout(cardAnimationTimerIdRef.current);
     setCardAnimation(type === 'correct' ? 'animate-correctFlash' : 'animate-skipFlash');
-    cardAnimationTimerIdRef.current = setTimeout(() => setCardAnimation(null), 600);
+    cardAnimationTimerIdRef.current = window.setTimeout(() => setCardAnimation(null), 600);
   };
 
   const triggerHappyAnimations = () => {
@@ -346,8 +338,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       left: buttonRect.left - gameAreaRect.left + (buttonRect.width / 2) - (catEmojiWidth / 2),
     });
     setCatAnimationType('happy');
-    if (catAnimationTimerRef.current) clearTimeout(catAnimationTimerRef.current);
-    catAnimationTimerRef.current = setTimeout(() => {
+    if (catAnimationTimerRef.current) window.clearTimeout(catAnimationTimerRef.current);
+    catAnimationTimerRef.current = window.setTimeout(() => {
       setCatAnimationType(null);
       setCatAnimPosition(null);
     }, 800);
@@ -363,8 +355,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       delay: `${Math.random() * 0.3}s`,
     }));
     setStarEffects(newStarsArray);
-    if (starEffectTimerRef.current) clearTimeout(starEffectTimerRef.current);
-    starEffectTimerRef.current = setTimeout(() => setStarEffects([]), 1000);
+    if (starEffectTimerRef.current) window.clearTimeout(starEffectTimerRef.current);
+    starEffectTimerRef.current = window.setTimeout(() => setStarEffects([]), 1000);
   };
 
   const triggerSadAnimation = () => {
@@ -378,8 +370,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       left: buttonRect.left - gameAreaRect.left + (buttonRect.width / 2) - (sadEmojiWidth / 2),
     });
     setCatAnimationType('sad');
-    if (catAnimationTimerRef.current) clearTimeout(catAnimationTimerRef.current);
-    catAnimationTimerRef.current = setTimeout(() => {
+    if (catAnimationTimerRef.current) window.clearTimeout(catAnimationTimerRef.current);
+    catAnimationTimerRef.current = window.setTimeout(() => {
         setCatAnimationType(null);
         setCatAnimPosition(null);
     }, 800);
@@ -413,7 +405,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       if (newStreak >= COMBO_ACTIVATION_THRESHOLD) {
         if (!isComboActive) {
              playSound(customPowerupCollectedSound || SINGLE_SOUND_EFFECTS.POWERUP_COLLECTED); 
-             triggerGameMessage(`COMBO ${newStreak}x ACTIVE!`, 'comboActivate', 1200);
+             triggerGameMessage(\`COMBO \${newStreak}x ACTIVE!\`, 'comboActivate', 1200);
         }
         setIsComboActive(true);
         awardedPointsThisTurn += COMBO_POINT_BONUS;
@@ -424,7 +416,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           setGameTimeLeft(newTime);
           setComboTimeBonusesAppliedThisGame(prev => prev + 1);
           playSound(customPowerupTimeFreezeSound || SINGLE_SOUND_EFFECTS.POWERUP_TIME_FREEZE); 
-          triggerGameMessage(`+${COMBO_TIME_BONUS_SECONDS} SECONDS!`, 'timeBonus', 1500);
+          triggerGameMessage(\`+\${COMBO_TIME_BONUS_SECONDS} SECONDS!\`, 'timeBonus', 1500);
         }
       }
       
@@ -442,21 +434,20 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       
       setPointAnimationKey(prevKey => prevKey + 1); 
       setPointsAwardedAnim({ points: awardedPointsThisTurn, isLucky: wasLucky, isCombo: wasComboBonus, isDoubled: wasDoubledThisTurn });
-      setTimeout(() => setPointsAwardedAnim(null), 1500); 
+      window.setTimeout(() => setPointsAwardedAnim(null), 1500); 
       triggerHappyAnimations();
 
-      // Check for Milestone-Based Power-Up Earnings AFTER score and combo are updated
       if (newStreak >= 10 && newStreak % 10 === 0 && newStreak > lastTimeFreezeComboMilestone) {
         setGameTimeLeft(prev => Math.min(settings.totalTimeLimit, prev + POWERUP_TIME_FREEZE_SECONDS));
         setLastTimeFreezeComboMilestone(newStreak);
-        setIsTimerFrozen(true); // Activate freeze
-        setTimeout(() => setIsTimerFrozen(false), POWERUP_TIME_FREEZE_SECONDS * 1000); // Deactivate after duration
+        setIsTimerFrozen(true); 
+        window.setTimeout(() => setIsTimerFrozen(false), POWERUP_TIME_FREEZE_SECONDS * 1000); 
         playSound(customPowerupTimeFreezeSound || SINGLE_SOUND_EFFECTS.POWERUP_TIME_FREEZE);
-        triggerGameMessage(`❄️ TIME FREEZE! +${POWERUP_TIME_FREEZE_SECONDS}s`, 'powerUpFeedback', 2000);
+        triggerGameMessage(\`❄️ TIME FREEZE! +\${POWERUP_TIME_FREEZE_SECONDS}s\`, 'powerUpFeedback', 2000);
       }
 
       if (newStreak >= 5 && newStreak % 10 === 5 && newStreak > lastSkipFreebieComboMilestone) {
-        setSkipFreebiesAvailable(prev => prev + 1); // Increment stack
+        setSkipFreebiesAvailable(prev => prev + 1); 
         setLastSkipFreebieComboMilestone(newStreak);
         playSound(customPowerupCollectedSound || SINGLE_SOUND_EFFECTS.POWERUP_COLLECTED);
         triggerGameMessage("↪️ SKIP FREEBIE EARNED!", 'powerUpFeedback', 1500);
@@ -470,12 +461,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           triggerGameMessage("✨ POINTS DOUBLER ACTIVE!", 'powerUpFeedback', 1500);
       }
 
-    } else { // Skipped word
+    } else { 
       if (skipFreebiesAvailable > 0) {
-        setSkipFreebiesAvailable(prev => prev - 1); // Consume a freebie from stack
+        setSkipFreebiesAvailable(prev => prev - 1); 
         playSound(customPowerupSkipFreebieUsedSound || SINGLE_SOUND_EFFECTS.POWERUP_SKIP_FREEBIE_USED);
         triggerGameMessage("↪️ SKIP FREEBIE USED!", 'powerUpFeedback', 1500);
-        // Combo streak is NOT reset
       } else {
         setCurrentComboStreak(0); 
         setIsComboActive(false);
@@ -485,10 +475,10 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       triggerSadAnimation();
     }
 
-    if (wordProcessingTimerIdRef.current) clearTimeout(wordProcessingTimerIdRef.current);
-    wordProcessingTimerIdRef.current = setTimeout(() => {
+    if (wordProcessingTimerIdRef.current) window.clearTimeout(wordProcessingTimerIdRef.current);
+    wordProcessingTimerIdRef.current = window.setTimeout(() => {
       if (currentWordIndex + 1 >= shuffledWords.length) {
-        if (gameTimerIdRef.current) clearInterval(gameTimerIdRef.current);
+        if (gameTimerIdRef.current) window.clearInterval(gameTimerIdRef.current);
         onGameEndRef.current(newScore, gameTimeLeft);
       } else {
         setCurrentWordIndex(prevIndex => prevIndex + 1);
@@ -507,28 +497,30 @@ export const GameScreen: React.FC<GameScreenProps> = ({
 
   const handleCorrect = useCallback(() => {
     if (isProcessingWord || gameTimeLeft <= 0 || !showGameUI) return;
-    playSound(customCorrectSounds.length > 0 ? customCorrectSounds : CORRECT_SOUNDS);
+    const correctSoundsToPlay = customCorrectSounds.length > 0 ? customCorrectSounds : SINGLE_SOUND_EFFECTS.CORRECT_SOUNDS_ARRAY_PLACEHOLDER || []; 
+    playSound(correctSoundsToPlay);
     advanceWord(true);
   }, [advanceWord, isProcessingWord, gameTimeLeft, customCorrectSounds, showGameUI]);
 
   const handleSkip = useCallback(() => {
     if (isProcessingWord || gameTimeLeft <= 0 || !showGameUI) return;
-    if (skipFreebiesAvailable <= 0) { // Play regular skip sound only if not using a freebie
-        playSound(customSkipSounds.length > 0 ? customSkipSounds : SKIP_SOUNDS);
+    if (skipFreebiesAvailable <= 0) { 
+        const skipSoundsToPlay = customSkipSounds.length > 0 ? customSkipSounds : SINGLE_SOUND_EFFECTS.SKIP_SOUNDS_ARRAY_PLACEHOLDER || []; 
+        playSound(skipSoundsToPlay);
     }
     advanceWord(false);
   }, [advanceWord, isProcessingWord, gameTimeLeft, customSkipSounds, showGameUI, skipFreebiesAvailable]);
 
   const handleEndGameEarly = useCallback(() => {
     if (!showGameUI || isProcessingWord || gameTimeLeft <= 0) return;
-    if (gameTimerIdRef.current) clearInterval(gameTimerIdRef.current);
+    if (gameTimerIdRef.current) window.clearInterval(gameTimerIdRef.current);
     onGameEndRef.current(currentScore, 0); 
   }, [currentScore, showGameUI, isProcessingWord, gameTimeLeft]);
 
   const formatTime = (seconds: number) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+    return \`\${minutes}:\${remainingSeconds < 10 ? '0' : ''}\${remainingSeconds}\`;
   };
   
   const currentWord = shuffledWords[currentWordIndex];
@@ -554,11 +546,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
           {pointsAwardedAnim && (
             <span 
               key={pointAnimationKey}
-              className={`absolute left-1/2 -translate-x-1/2 -top-8 sm:-top-10 animate-floatUpFadeOut ${
+              className={\`absolute left-1/2 -translate-x-1/2 -top-8 sm:-top-10 animate-floatUpFadeOut \${
                 (pointsAwardedAnim.isLucky || pointsAwardedAnim.isCombo || pointsAwardedAnim.isDoubled) 
                 ? 'text-yellow-400 font-extrabold text-2xl sm:text-3xl' 
                 : 'text-neon-green font-bold text-xl sm:text-2xl'
-              }`}
+              }\`}
               aria-hidden="true"
             >
               {getPointsAnimationEmoji()}
@@ -567,8 +559,8 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             </span>
           )}
         </div>
-        <div className={`text-lg sm:text-xl font-semibold text-electric-blue text-right ${isTimerFrozen ? 'animate-timerFreezeEffect' : ''}`}>
-          TIME: <span className={`text-2xl sm:text-3xl font-bold ${gameTimeLeft <= 10 && gameTimeLeft > 0 && showGameUI ? 'text-danger-red animate-pingOnce' : gameTimeLeft === 0 && showGameUI ? 'text-danger-red font-extrabold' : 'text-electric-blue'}`}>{formatTime(gameTimeLeft)}</span>
+        <div className={\`text-lg sm:text-xl font-semibold text-electric-blue text-right \${isTimerFrozen ? 'animate-timerFreezeEffect' : ''}\`}>
+          TIME: <span className={\`text-2xl sm:text-3xl font-bold \${gameTimeLeft <= 10 && gameTimeLeft > 0 && showGameUI ? 'text-danger-red animate-pingOnce' : gameTimeLeft === 0 && showGameUI ? 'text-danger-red font-extrabold' : 'text-electric-blue'}\`}>{formatTime(gameTimeLeft)}</span>
         </div>
       </div>
       
@@ -577,13 +569,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({
             <span>Word {Math.min(currentWordIndex + 1, shuffledWords.length)} of {shuffledWords.length}</span>
             <div className="flex items-center space-x-2">
                 {skipFreebiesAvailable > 0 && (
-                  <span className="text-xl text-yellow-400" title={`Skip Freebies: ${skipFreebiesAvailable}`}>
+                  <span className="text-xl text-yellow-400" title={\`Skip Freebies: \${skipFreebiesAvailable}\`}>
                     ↪️ x{skipFreebiesAvailable}
                   </span>
                 )}
                 {isNextWordPointsDoubled && <span className="text-xl text-yellow-300" title="Points Doubler Active">✨</span>}
                 {currentComboStreak > 0 && (
-                    <span className={`font-bold ${isComboActive ? 'text-orange-400' : 'text-muted-text'}`}>
+                    <span className={\`font-bold \${isComboActive ? 'text-orange-400' : 'text-muted-text'}\`}>
                         🔥 Combo: x{currentComboStreak}
                     </span>
                 )}
@@ -594,11 +586,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       {gameMessage && (
         <div 
           key={gameMessage.key} 
-          className={`absolute top-1/3 left-1/2 -translate-x-1/2 z-50 p-3 sm:p-4 rounded-lg shadow-xl text-center
-            ${gameMessage.type === 'comboActivate' ? 'bg-orange-500/90 text-white animate-comboActivatePop text-xl sm:text-2xl md:text-3xl font-bold' 
+          className={\`absolute top-1/3 left-1/2 -translate-x-1/2 z-50 p-3 sm:p-4 rounded-lg shadow-xl text-center
+            \${gameMessage.type === 'comboActivate' ? 'bg-orange-500/90 text-white animate-comboActivatePop text-xl sm:text-2xl md:text-3xl font-bold' 
             : gameMessage.type === 'timeBonus' ? 'bg-blue-500/90 text-white animate-timeBonusFloatUp text-lg sm:text-xl md:text-2xl font-semibold' 
             : gameMessage.type === 'powerUpFeedback' ? 'bg-purple-600/90 text-white animate-powerUpAppear text-lg sm:text-xl font-semibold'
-            : 'bg-gray-700/90 text-white animate-fadeInScaleUp'} `}
+            : 'bg-gray-700/90 text-white animate-fadeInScaleUp'} \`}
           role="alert"
         >
           {gameMessage.text}
@@ -609,7 +601,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       <div className="w-full min-h-[150px] sm:min-h-[200px] md:min-h-[250px] flex items-center justify-center relative">
         {!showGameUI && currentCountdownText ? (
             <div className="countdown-text"> 
-                <span className={`${getCountdownAnimationClass(currentCountdownText)}`}>
+                <span className={\`\${getCountdownAnimationClass(currentCountdownText)}\`}>
                   {currentCountdownText}
                 </span>
             </div>
@@ -636,11 +628,11 @@ export const GameScreen: React.FC<GameScreenProps> = ({
       
       {catAnimationType && catAnimPosition && (
         <div
-          className={`cat-animation-container animate-${catAnimationType === 'happy' ? 'catHappyJump' : 'catSadAppear'}`}
+          className={\`cat-animation-container animate-\${catAnimationType === 'happy' ? 'catHappyJump' : 'catSadAppear'}\`}
           style={{
             position: 'absolute',
-            top: `${catAnimPosition.top}px`,
-            left: `${catAnimPosition.left}px`,
+            top: \`\${catAnimPosition.top}px\`,
+            left: \`\${catAnimPosition.left}px\`,
           }}
           aria-hidden="true"
         >
