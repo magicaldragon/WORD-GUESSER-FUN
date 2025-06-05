@@ -32,14 +32,12 @@ export const DEFAULT_MUSIC_VOLUME = 0.5; // 50%
 
 // ** 3. CORRECT GUESS SOUNDS **
 // This is an array of URLs. Add more URLs for multiple random correct sounds.
-// This constant itself is used by App.tsx to pass to GameScreen if customCorrectSounds is empty.
 export const CORRECT_SOUNDS = [
   'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/CORRECT%20SOUND.wav',
 ];
 
 // ** 4. SKIP WORD SOUNDS **
 // This is an array of URLs, similar to CORRECT_SOUNDS.
-// This constant itself is used by App.tsx to pass to GameScreen if customSkipSounds is empty.
 export const SKIP_SOUNDS = [
   'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/SKIP%20SOUND.wav',
 ];
@@ -70,13 +68,7 @@ export const SINGLE_SOUND_EFFECTS = {
   POWERUP_COLLECTED: 'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/Power-Up%20Collected%20Sound.mp3' as string | null, 
   POWERUP_TIME_FREEZE: 'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/Time%20Freeze%20Sound.mp3' as string | null, 
   POWERUP_SKIP_FREEBIE_USED: 'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/Skip%20Freebie%20Used%20Sound.mp3' as string | null, 
-  POWERUP_POINTS_DOUBLER_APPLIED: 'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/Points%20Doubler%20Applied%20Sound.mp3' as string | null,
-
-  // Placeholders for default arrays if custom ones are empty in GameScreen
-  // GameScreen will use customCorrectSounds (from App.tsx which falls back to CORRECT_SOUNDS from here)
-  // These placeholders are for type safety if GameScreen were to directly access SINGLE_SOUND_EFFECTS for these array types
-  CORRECT_SOUNDS_ARRAY_PLACEHOLDER: CORRECT_SOUNDS as string[],
-  SKIP_SOUNDS_ARRAY_PLACEHOLDER: SKIP_SOUNDS as string[],
+  POWERUP_POINTS_DOUBLER_APPLIED: 'https://raw.githubusercontent.com/magicaldragon/WORD-GUESSER-FUN/main/Points%20Doubler%20Applied%20Sound.mp3' as string | null, 
 };
 
 // --- Helper function to play sounds ---
