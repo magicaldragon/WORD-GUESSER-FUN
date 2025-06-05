@@ -1,0 +1,6 @@
+{
+  "name": "Word Guesser Fun",
+  "description": "A fun word guessing game for students. Describe the word on screen to your partner before time runs out! Now installable as a PWA for offline fun!",
+  "requestFramePermissions": [],
+  "prompt": ""
+}
